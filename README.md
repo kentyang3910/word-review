@@ -66,9 +66,11 @@ DEVELOPMENT_TEAM = YOURTEAMID
 
 ## 没有 Mac 时
 
-准备好的 GitHub Actions 流程使用云端 macOS，执行测试、模拟器构建和未签名的设备构建。它需要把本工程放在仓库根目录；推送到 `ios` 分支会运行。当前未将源代码上传到用户仓库，也没有启动云端任务。
+准备好的 GitHub Actions 流程使用云端 macOS，执行测试、模拟器构建和未签名的设备构建。它需要把本工程放在仓库根目录；工作流上传后，推送到 `ios` 分支会运行。2026-10-01 已将应用源码上传到公开仓库的 `ios` 分支；现有令牌缺少 Workflows 写入权限，工作流尚未上传，云端构建和测试尚未运行。
 
-如果沿用现有公开 `kentyang3910/word-review` 仓库，建议只在独立 `ios` 分支添加工程，保留既有资料发布分支和 GitHub Pages 设置。这样会公开本工程源码，因此先取得用户确认。工作流构建产物标注 UNSIGNED，不能直接安装到 iPhone。
+已按用户授权沿用公开 `kentyang3910/word-review` 仓库，仅在独立 `ios` 分支添加工程，保留既有资料发布分支和 GitHub Pages 设置。工作流构建产物标注 UNSIGNED，不能直接安装到 iPhone。
+
+要启动首次构建：在 GitHub 的 Settings → Developer settings → Personal access tokens → Fine-grained tokens 中编辑发布器使用的令牌，为本仓库增加 Workflows: Read and write 并保存，然后重新提交 `.github/workflows/ios-check.yml`。不必重新生成令牌，也不必在聊天中发送令牌。
 
 要从云端构建继续到手机安装，还需确定苹果签名方案。TestFlight 分发需要具备相应 Apple Developer Program / App Store Connect 权限。签名材料应放入云端构建平台的专用 Secrets，不写入源码；本次没有配置任何签名材料，也没有上传 App Store/TestFlight。
 

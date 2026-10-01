@@ -1,0 +1,25 @@
+name: iOS build and tests (unsigned)
+on:
+  workflow_dispatch:
+  push:
+    branches: [ios]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and run tests
+        run: bash Scripts/validate-mac.sh
+      - name: Package unsigned device app
+        run: ditto -c -k --keepParent build/Device/Build/Products/Release-iphoneos/WordReview.app build/WordReview-UNSIGNED.app.zip
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: iOS-validation-and-unsigned-app
+          path: |
+            build/*.xcresult
+            build/WordReview-UNSIGNED.app.zip
+          retention-days: 7
