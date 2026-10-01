@@ -2,7 +2,9 @@
 
 以用户已跑通的 Android 0.2.1 为行为基准，使用 SwiftUI、WidgetKit、App Intents 和 PDFKit 实现。最低 iOS 17，面向用户提供的 iPhone 17 / iOS 26.6.1 测试设备。
 
-**当前交付是源码工程，不是已签名、可直接安装的 IPA。** 当前工作环境为 Windows，没有 Xcode，也没有执行苹果编译器、iOS 模拟器测试或 iPhone 真机测试。静态语法检查不能替代构建。下一步需在 Mac 或云端 macOS 运行构建和测试、修复实际诊断，再配置签名。
+**当前交付包含源码及云端构建通过的未签名设备应用，尚不能直接安装到 iPhone。** 2026-10-01 已在 GitHub macOS / Xcode 16.4 完成 19 项核心逻辑测试、Mac PDF 提取检查、25 项 iOS 模拟器测试和 Release 设备构建，全部通过。iOS 测试使用合成双页 30 词条 PDF，不代表已经验证用户原始 PDF 或 iPhone 17 / iOS 26.6.1 真机。
+
+[查看通过的构建与测试](https://github.com/kentyang3910/word-review/actions/runs/36856937011)，对应代码提交 `c0f40730f8587c5faed8e282437d90b09abac973`。
 
 ## 功能实现
 
@@ -14,7 +16,7 @@
 - 点击词条或组件背景打开完整 PDF，右上角显示进度。原生 PDFView 支持缩放和多页滚动。
 - 本地 PDF 导入及词表校对；20 MB、50 页、1000 词条限制。
 - 固定 HTTPS PDF 或 deck.json 地址同步；原 GitHub Pages 链接可继续使用。words 存在时以清单为准，否则在手机提取。
-- PDFKit 字符坐标 + Core Graphics 表格边框识别，保留短语/单元格内换行并跨页去重；无可识别表格时回退至文字规则。没有 OCR。
+- Core Graphics 表格边框识别 + PDFKit 单元格区域选取，保留短语/单元格内换行并跨页去重；无可识别表格时回退至文字规则。没有 OCR。
 - App Group 保存 PDF 和状态，文件锁保证主应用与扩展的读改写互斥，原子写入；下载失败保留旧资料。
 
 ## iPhone 与安卓的区别
@@ -40,10 +42,10 @@ WidgetKit 控制刷新时机。代码请求约 0.7 秒的勾选反馈并生成�
 | App | iPhone 主界面、导入校对、PDF 阅读器、后台调度 |
 | Widget | 中号/大号桌面小组件与时间线 |
 | Config/Settings.xcconfig | 包名、共享组和签名团队配置入口 |
-| Tests | 19 项纯逻辑测试 + 4 项 iOS PDFKit/存储测试；尚未执行 |
+| Tests | 19 项纯逻辑测试 + 6 项 iOS PDFKit/存储/共享组测试；全部通过 |
 | Tests/Fixtures/table.pdf | 合成的双页词表测试文件，不是用户的原始 PDF |
 | Scripts/validate-mac.sh | Mac 上执行逻辑测试、iOS 模拟器测试和未签名设备构建 |
-| .github/workflows/ios-check.yml | 云端 macOS 构建流程，仅配置，尚未上传/运行 |
+| .github/workflows/ios-check.yml | 云端 macOS 构建流程，已上传并运行成功 |
 
 ## 有 Mac 时构建
 
@@ -66,11 +68,15 @@ DEVELOPMENT_TEAM = YOURTEAMID
 
 ## 没有 Mac 时
 
-准备好的 GitHub Actions 流程使用云端 macOS，执行测试、模拟器构建和未签名的设备构建。它需要把本工程放在仓库根目录；工作流上传后，推送到 `ios` 分支会运行。2026-10-01 已将应用源码上传到公开仓库的 `ios` 分支；现有令牌缺少 Workflows 写入权限，工作流尚未上传，云端构建和测试尚未运行。
+GitHub Actions 使用云端 macOS，运行逻辑测试、PDF 提取检查、模拟器测试和未签名设备构建。工程已按用户授权发布到公开 `kentyang3910/word-review` 仓库的独立 `ios` 分支，构建通过；既有资料发布分支和 GitHub Pages 设置保持不变。
 
-已按用户授权沿用公开 `kentyang3910/word-review` 仓库，仅在独立 `ios` 分支添加工程，保留既有资料发布分支和 GitHub Pages 设置。工作流构建产物标注 UNSIGNED，不能直接安装到 iPhone。
+本地交付文件 `WordReview-iOS-0.1.0-UNSIGNED.app.zip` 是未签名应用归档，`WordReview-iOS-validation.zip` 包含测试报告与该应用。它们不是可以直接点击安装的 IPA。GitHub 构建附件保存 7 天，本地副本不受该期限限制。
 
-要启动首次构建：在 GitHub 的 Settings → Developer settings → Personal access tokens → Fine-grained tokens 中编辑发布器使用的令牌，为本仓库增加 Workflows: Read and write 并保存，然后重新提交 `.github/workflows/ios-check.yml`。不必重新生成令牌，也不必在聊天中发送令牌。
+普通 Apple ID 的 Windows 安装候选方案是 AltStore Classic；其官方说明要求通过 Windows 上的 AltServer 安装，普通账号应用需定期刷新签名。账号登录和手机信任操作由用户本人完成。本工程已兼容 AltStore 写入的 `ALTAppGroups` 共享组名称，但仍需实际完成签名、保留小组件扩展与 App Groups 权限并在真机验证，不能据编译成功保证安装成功。
+
+- [AltStore Windows 安装说明](https://faq.altstore.io/altstore-classic/how-to-install-altstore-windows)
+- [AltStore 应用刷新与 7 天期限](https://faq.altstore.io/altstore-classic/your-altstore)
+- [AltStore 签名时写入共享组的实现](https://github.com/altstoreio/AltStore/blob/develop/AltStore/Operations/ResignAppOperation.swift)
 
 要从云端构建继续到手机安装，还需确定苹果签名方案。TestFlight 分发需要具备相应 Apple Developer Program / App Store Connect 权限。签名材料应放入云端构建平台的专用 Secrets，不写入源码；本次没有配置任何签名材料，也没有上传 App Store/TestFlight。
 
