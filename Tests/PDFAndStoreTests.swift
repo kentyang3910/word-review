@@ -2,6 +2,14 @@ import XCTest
 import Foundation
 
 final class PDFAndStoreTests: XCTestCase {
+    func testResignedGroupUsesProvisionedIdentifier() {
+        XCTAssertEqual(AppConfig.resolvedGroup(configured: "group.review", signedGroups: ["group.review.TEAM"]), "group.review.TEAM")
+        XCTAssertEqual(AppConfig.resolvedGroup(configured: "group.review", signedGroups: []), "group.review")
+    }
+    func testAmbiguousResignedGroupsDoNotSelectUnrelatedContainer() {
+        XCTAssertEqual(AppConfig.resolvedGroup(configured: "group.review", signedGroups: ["group.other", "group.another"]), "group.review")
+        XCTAssertEqual(AppConfig.resolvedGroup(configured: "group.review", signedGroups: ["group.other", "group.review.TEAM"]), "group.review.TEAM")
+    }
     func fixture() throws -> Data {
         let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "table", withExtension: "pdf"))
         return try Data(contentsOf: url)

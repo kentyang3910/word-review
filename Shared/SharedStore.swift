@@ -10,7 +10,19 @@ enum AppConfig {
     static let widgetKind = "WordReviewWidget"
     static let readerURL = URL(string: "wordreview://reader")!
     static let defaultSource = "https://kentyang3910.github.io/word-review/deck.json"
-    static var groupID: String { (Bundle.main.object(forInfoDictionaryKey: "ReviewAppGroup") as? String) ?? "group.cn.wordreview.ios" }
+    static var groupID: String {
+        let configured = (Bundle.main.object(forInfoDictionaryKey: "ReviewAppGroup") as? String) ?? "group.cn.wordreview.ios"
+        return resolvedGroup(configured: configured, signedGroups: Bundle.main.object(forInfoDictionaryKey: "ALTAppGroups") as? [String] ?? [])
+    }
+    /// AltStore writes the provisioned App Groups into each bundle after re-signing.
+    /// This app declares exactly one shared group; never pick an arbitrary group if several are present.
+    static func resolvedGroup(configured: String, signedGroups: [String]) -> String {
+        let groups = Array(Set(signedGroups.filter { $0.hasPrefix("group.") }))
+        if groups.count == 1 { return groups[0] }
+        if groups.contains(configured) { return configured }
+        let matches = groups.filter { $0.hasPrefix(configured + ".") }
+        return matches.count == 1 ? matches[0] : configured
+    }
     static var backgroundID: String { (Bundle.main.object(forInfoDictionaryKey: "ReviewRefreshIdentifier") as? String) ?? "cn.wordreview.ios.refresh" }
 }
 struct SharedRecord: Codable {

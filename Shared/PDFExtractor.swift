@@ -4,7 +4,7 @@ import CoreGraphics
 
 enum PDFExtractor {
     static let maxBytes = 20 * 1024 * 1024
-    static func extract(_ data: Data) throws -> [String] {
+    static func extract(_ data: Data, diagnostics: ((String) -> Void)? = nil) throws -> [String] {
         guard data.count <= maxBytes, data.starts(with: Data("%PDF-".utf8)), let document = PDFDocument(data: data), !document.isLocked else {
             throw ReviewError.message("请选择有效、未加密且不超过 20 MB 的 PDF。")
         }
@@ -21,6 +21,7 @@ enum PDFExtractor {
                                     y: crop.maxY - box.midY, width: box.width, space: max(1, box.width * 0.6)))
             }
             let lines = page.rotation == 0 ? PDFBorders.lines(page) : []
+            diagnostics?("page=\(index) crop=\(crop) chars=\(page.numberOfCharacters) string=\(text.length) glyphs=\(glyphs.count) borders=\(lines.count)\ntext=\(text)\nfirstGlyphs=\(Array(glyphs.prefix(50)))\nfirstBorders=\(Array(lines.prefix(8)))")
             let table = GridWords.extract(glyphs, lines)
             result.append(contentsOf: table.isEmpty ? WordRules.extract(text as String) : table)
         }
