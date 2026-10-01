@@ -12,18 +12,18 @@ enum PDFExtractor {
         var result: [String] = []
         for index in 0..<document.pageCount {
             guard let page = document.page(at: index) else { continue }
-            let crop = page.bounds(for: .cropBox), text = (page.string ?? "") as NSString
-            var glyphs: [GridWords.Glyph] = []
-            for i in 0..<min(page.numberOfCharacters, text.length) {
-                let box = page.characterBounds(at: i)
-                guard !box.isNull, box.width.isFinite, box.minX.isFinite, box.midY.isFinite else { continue }
-                glyphs.append(.init(text: text.substring(with: NSRange(location: i, length: 1)), x: box.minX - crop.minX,
-                                    y: crop.maxY - box.midY, width: box.width, space: max(1, box.width * 0.6)))
-            }
+            let crop = page.bounds(for: .cropBox), text = page.string ?? ""
             let lines = page.rotation == 0 ? PDFBorders.lines(page) : []
-            diagnostics?("page=\(index) crop=\(crop) chars=\(page.numberOfCharacters) string=\(text.length) glyphs=\(glyphs.count) borders=\(lines.count)\ntext=\(text)\nfirstGlyphs=\(Array(glyphs.prefix(50)))\nfirstBorders=\(Array(lines.prefix(8)))")
-            let table = GridWords.extract(glyphs, lines)
-            result.append(contentsOf: table.isEmpty ? WordRules.extract(text as String) : table)
+            // PDFKit's page.string can insert line breaks that don't correspond to
+            // characterBounds indices. Select each bounded cell directly instead.
+            let table = GridWords.extract(lines) { left, right, top, bottom in
+                let rect = CGRect(x: crop.minX + left, y: crop.maxY - bottom, width: right - left, height: bottom - top).insetBy(dx: 1, dy: 1)
+                let value = page.selection(for: rect)?.string ?? ""
+                diagnostics?("cell \(left),\(top): \(value)")
+                return value
+            }
+            diagnostics?("page=\(index) borders=\(lines.count) words=\(table.count)")
+            result.append(contentsOf: table.isEmpty ? WordRules.extract(text) : table)
         }
         return Array(WordRules.unique(result).prefix(1000))
     }

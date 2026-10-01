@@ -34,6 +34,9 @@ enum GridWords {
         return WordRules.replace(strings.joined(separator: " "), "\\s+", " ").trimmingCharacters(in: .whitespacesAndNewlines)
     }
     static func extract(_ glyphs: [Glyph], _ lines: [Line]) -> [String] {
+        extract(lines) { l, r, t, b in cell(glyphs, l, r, t, b) }
+    }
+    static func extract(_ lines: [Line], cellText: (Double, Double, Double, Double) -> String) -> [String] {
         let xs = unique(lines.filter { $0.x2 - $0.x1 < 1.5 && $0.y2 - $0.y1 > 5 }.map(\.x1))
         let ys = unique(lines.filter { $0.y2 - $0.y1 < 1.5 && $0.x2 - $0.x1 > 5 }.map(\.y1))
         guard xs.count >= 2, ys.count >= 2 else { return [] }
@@ -45,7 +48,7 @@ enum GridWords {
             for row in 0..<(ys.count - 1) {
                 let l = xs[col], r = xs[col + 1], t = ys[row], b = ys[row + 1]
                 guard horizontal(l, r, t), horizontal(l, r, b), vertical(l, t, b), vertical(r, t, b) else { english = false; continue }
-                let text = cell(glyphs, l, r, t, b)
+                let text = WordRules.replace(cellText(l, r, t, b), "\\s+", " ").trimmingCharacters(in: .whitespacesAndNewlines)
                 if ["english", "word", "words", "vocabulary", "phrase", "phrases"].contains(text.lowercased()) { english = true; continue }
                 if english, let phrase = WordRules.phrase(text) { result.append(phrase) }
             }
