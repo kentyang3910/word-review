@@ -1,0 +1,7 @@
+// Replace with your own unique identifier before registering Apple signing assets.
+APP_BUNDLE_ID = cn.wordreview.ios
+APP_GROUP_IDENTIFIER = group.$(APP_BUNDLE_ID)
+REVIEW_REFRESH_IDENTIFIER = $(APP_BUNDLE_ID).refresh
+DEVELOPMENT_TEAM =
+// Optional local overrides are excluded from delivery and Git.
+#include? "Local.xcconfig"
